@@ -1,4 +1,3 @@
-
 const composeReducers = (reducers, mod) => {
     let maps = {};
     Object.keys(reducers).forEach(key => {
@@ -51,7 +50,12 @@ const merge = (dist = {}, source) => {
 const getInitState = (models) => {
     let state = {};
     Object.keys(models).forEach(mod => {
-        state[mod] = models[mod].state;
+        if (models[mod].state) {
+            state[mod] = models[mod].state
+        } else if (typeof models[mod] === 'function') {
+            state[mod] = models[mod]();
+            console.log(models[mod]())
+        }
     });
     return state;
 }
@@ -59,27 +63,38 @@ const getInitState = (models) => {
 export default function(models) {
     const mods = Object.keys(models);
     let ret = {};
+    let extra = {};
     mods.forEach(mod => {
         let modReducer = models[mod].reducers;
-        // TODO: 跨模块相同的reducer.
-        merge(ret, composeReducers(modReducer, mod));
+        if (!modReducer) {
+            if (typeof models[mod] === 'function') {
+                extra[mod] = models[mod];
+            }
+        } else {
+            merge(ret, composeReducers(modReducer, mod));
+        }
     });
 
     let initState = getInitState(models);
 
+
     return (state = initState, action) => {
+        if (action.type === '@@INIT') return initState;
         const reducer = ret[action.type];
         let change = {};
-        if (!reducer) return state;
-        if (Array.isArray(reducer)) {
-            reducer.forEach(fn => {
-                change[fn.module] = fn(state, action);
-            });
-        } else if (typeof reducer === 'function') {
-            change[reducer.module] = reducer(state, action);
+        if (reducer) {
+            if (Array.isArray(reducer)) {
+                reducer.forEach(fn => {
+                    change[fn.module] = fn(state[fn.module], action);
+                });
+            } else if (typeof reducer === 'function') {
+                change[reducer.module] = reducer(state[reducer.module], action);
+            }
         }
 
-        // TODO:init state
+        Object.keys(extra).forEach(key => {
+            change[key] = extra[key](state[key], action);
+        });
         return {
             ...state,
             ...change
