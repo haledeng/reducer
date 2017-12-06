@@ -1,5 +1,6 @@
 import {
-    connect
+    connect,
+    connectAdvanced
 } from 'react-redux';
 
 import {
@@ -17,11 +18,13 @@ const defaultMapDispath = (state) => {
 }
 
 export default function(mapStateToProps, mapDispatchToProps = ) {
-    class Wrapper extends Component {
+    class HOC extends Component {
         render() {
             return (
             )
 
         }
     }
+
+    return HOC(selectorFactory)
 }
