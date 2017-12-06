@@ -1,5 +1,5 @@
 
-const composeReducers = (reducers, mod) {
+const composeReducers = (reducers, mod) => {
     let maps = {};
     Object.keys(reducers).forEach(key => {
         maps[key] = reducers[key];
